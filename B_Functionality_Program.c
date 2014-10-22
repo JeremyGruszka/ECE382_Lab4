@@ -4,10 +4,12 @@
 extern void init();
 extern void initNokia();
 extern void clearDisplay();
+extern void invertDisplay();
 extern void drawBlock(unsigned char row, unsigned char col, unsigned char color);
 
 #define		TRUE			1
 #define		FALSE			0
+#define		AUX_BUTTON		(P2IN & BIT3)
 
 //defines the createBall method
 ball_t createBall(int xPos, int yPos, int xVel, int yVel)
@@ -22,9 +24,14 @@ ball_t createBall(int xPos, int yPos, int xVel, int yVel)
 
 void main(void)
 {
-	WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
+	// === Initialize system ================================================
+	IFG1=0; /* clear interrupt flag1 */
+	WDTCTL=WDTPW+WDTHOLD; /* stop WD */
 
-	unsigned char	x, y, z;
+	unsigned char	x, y, z, button_press;
+
+	button_press = FALSE;
+	z = 1;
 
 	init();
 	initNokia();
@@ -34,6 +41,20 @@ void main(void)
 
 	while(1)
 	{
+		//the first two if statements are to watch for a SW3 button press to invert the screen
+		if(AUX_BUTTON == 0)
+		{
+			button_press = TRUE;
+			while(AUX_BUTTON == 0);
+			if(z == 1)
+			{
+				z = 0;
+			}
+			else
+			{
+				z = 1;
+			}
+		}
 		//These 4 if statements check to see if the ball hits a wall
 		if((myBall.xPos * 8) >= 88) //right wall
 		{
@@ -56,8 +77,14 @@ void main(void)
 		myBall.yPos += myBall.yVel;
 		x = myBall.xPos;
 		y = myBall.yPos;
-		z = 1;
-		clearDisplay();
+		if (z == 1)
+		{
+			clearDisplay();
+		}
+		else
+		{
+			invertDisplay();
+		}
 		drawBlock(y,x,z);
 		int j,k;
 		//wait function to slow down ball movement

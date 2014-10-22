@@ -28,6 +28,7 @@ STE2007_DISPLAYON:				.equ	0xAF
 	.global init
 	.global initNokia
 	.global clearDisplay
+	.global	invertDisplay
 	.global drawBlock
 
 
@@ -216,6 +217,40 @@ clearLoop:
 	ret
 
 ;-------------------------------------------------------------------------------
+;	Name:		invertDisplay
+;	Inputs:		none
+;	Outputs:	none
+;	Purpose:	Writes 0x360 blank 8-bit columns to the Nokia display
+;-------------------------------------------------------------------------------
+invertDisplay:
+	push	R11
+	push	R12
+	push	R13
+
+	mov.w	#0x00, R12			; set display address to 0,0
+	mov.w	#0x00, R13
+	call	#setAddress
+
+	mov.w	#0x01, R12			; write a "clear" set of pixels
+	mov.w	#0xFF, R13			; to every byt on the display
+
+	mov.w	#0x360, R11			; loop counter
+clearTheLoop:
+	call	#writeNokiaByte
+	dec.w	R11
+	jnz		clearTheLoop
+
+	mov.w	#0x00, R12			; set display address to 0,0
+	mov.w	#0x00, R13
+	call	#setAddress
+
+	pop		R13
+	pop		R12
+	pop		R11
+
+	ret
+
+;-------------------------------------------------------------------------------
 ;	Name:		setAddress
 ;	Inputs:		R12		row
 ;				R13		col
@@ -362,7 +397,23 @@ drawBlock:
 	mov		#0x18, R13
 	jmp		next
 noColor:
+	mov		#0xE7, R13
+	call	#writeNokiaByte
+	mov		#0xC3, R13
+	call	#writeNokiaByte
+	mov		#0x81, R13
+	call	#writeNokiaByte
 	mov		#0x00, R13
+	call	#writeNokiaByte
+	mov		#0x00, R13
+	call	#writeNokiaByte
+	mov		#0x81, R13
+	call	#writeNokiaByte
+	mov		#0xC3, R13
+	call	#writeNokiaByte
+	mov		#0xE7, R13
+	call	#writeNokiaByte
+	jmp		done
 next:
 	call	#writeNokiaByte
 	mov		#0x3C, R13
@@ -380,7 +431,7 @@ next:
 	mov		#0x18, R13
 	call	#writeNokiaByte
 
-
+done:
 	pop 	R14
 	pop		R13
 	pop		R12
