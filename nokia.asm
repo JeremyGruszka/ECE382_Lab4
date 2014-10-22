@@ -359,16 +359,27 @@ drawBlock:
 	mov		#1, R12
 	cmp		#0x01, R14
 	jnz		noColor
-	mov		#0xFF, R13
+	mov		#0x18, R13
 	jmp		next
 noColor:
 	mov		#0x00, R13
 next:
-	mov.w	#0x08, R5			; loop all 8 pixel columns
-loopdB:
-	call	#writeNokiaByte		; draw the pixels
-	dec.w	R5
-	jnz		loopdB
+	call	#writeNokiaByte
+	mov		#0x3C, R13
+	call	#writeNokiaByte
+	mov		#0x7E, R13
+	call	#writeNokiaByte
+	mov		#0xFF, R13
+	call	#writeNokiaByte
+	mov		#0xFF, R13
+	call	#writeNokiaByte
+	mov		#0x7E, R13
+	call	#writeNokiaByte
+	mov		#0x3C, R13
+	call	#writeNokiaByte
+	mov		#0x18, R13
+	call	#writeNokiaByte
+
 
 	pop 	R14
 	pop		R13
