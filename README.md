@@ -3,8 +3,6 @@ ECE382_Lab4
 
 ##Lab4
 
-Note - It says that I committed my main.asm at 1706 hours on Thursday.  I actually committed before COB yesterday, I had just forgotten to update the header for this program so I went in and changed my header.  That is why it says I committed my main.asm just now
-
 ####Objective
 
 Learn to interface C code, assembly code, and the MSP430 to create images and even games on the nokia display
@@ -16,42 +14,90 @@ Handed in in class
 ####Code
 
 ```
-            	.text                           ; Assemble into program memory
-            	.retain                         ; Override ELF conditional linking
-                                            	; and retain current section
-            	.retainrefs                     ; Additionally retain any sections
-                                            	; that have references to current
-                                            	; section
+extern void init();
+extern void initNokia();
+extern void clearDisplay();
+extern void drawBlock(unsigned char row, unsigned char col, unsigned char color);
 
-message		.byte	0xf8,0xb7,0x46,0x8c,0xb2,0x46,0xdf,0xac,0x42,0xcb,0xba,0x03,0xc7,0xba,0x5a,0x8c,0xb3,0x46,0xc2,0xb8,0x57,0xc4,0xff,0x4a,0xdf,0xff,0x12,0x9a,0xff,0x41,0xc5,0xab,0x50,0x82,0xff,0x03,0xe5,0xab,0x03,0xc3,0xb1,0x4f,0xd5,0xff,0x40,0xc3,0xb1,0x57,0xcd,0xb6,0x4d,0xdf,0xff,0x4f,0xc9,0xab,0x57,0xc9,0xad,0x50,0x80,0xff,0x53,0xc9,0xad,0x4a,0xc3,0xbb,0x50,0x80,0xff,0x42,0xc2,0xbb,0x03,0xdf,0xaf,0x42,0xcf,0xba,0x50,0x8f
+#define		TRUE			1
+#define		FALSE			0
+#define		UP_BUTTON		(P2IN & BIT5)
+#define		DOWN_BUTTON		(P2IN & BIT4)
+#define		AUX_BUTTON		(P2IN & BIT3)
+#define		LEFT_BUTTON		(P2IN & BIT2)
+#define		RIGHT_BUTTON	(P2IN & BIT1)
 
-key:		.byte	0xac, 0xdf, 0x23	;key used for encryption/decryption
 
-memLocation:	.equ	0x0200			;constant for memory location in RAM
+void main()
+{
 
-keyLength:	.equ	0x03			;length of key for B functionality
+	unsigned char	x, y, z, button_press;
 
-mesLength:	.equ	0x5E			;length of message
+	// === Initialize system ================================================
+	IFG1=0; /* clear interrupt flag1 */
+	WDTCTL=WDTPW+WDTHOLD; /* stop WD */
+	button_press = FALSE;
 
-;-------------------------------------------------------------------------------
 
-RESET       	mov.w   #__STACK_END,SP         ; Initialize stackpointer
-StopWDT     	mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
+	init();
+	initNokia();
+	clearDisplay();
+	x=4;
+	y=4;
+	z = 1;
+	drawBlock(y,x,z);
 
-;-------------------------------------------------------------------------------
-; Main loop here
-;-------------------------------------------------------------------------------
+	while(1)
+	{
 
-		mov.w	#message, R4        	;
-            	mov.w	#memLocation, R10	; load registers with necessary info for decryptMessage here
-            	mov.w	#key, R6		;
-		mov.w	#keyLength, R7		;
+			if (UP_BUTTON == 0)
+			{
+				while(UP_BUTTON == 0);
+				if (y>=1) y=y-1;
+				button_press = TRUE;
+			}
+			else if (DOWN_BUTTON == 0)
+			{
+				while(DOWN_BUTTON == 0);
+				if (y<=6) y=y+1;
+				button_press = TRUE;
+			}
+			else if (LEFT_BUTTON == 0)
+			{
+				while(LEFT_BUTTON == 0);
+				if (x>=1) x=x-1;
+				button_press = TRUE;
+			}
+			else if (RIGHT_BUTTON == 0)
+			{
+				while(RIGHT_BUTTON == 0);
+				if (x<=10) x=x+1;
+				button_press = TRUE;
+			}
 
-            	call    #decryptMessage
+			if(AUX_BUTTON == 0)
+			{
+				while(AUX_BUTTON == 0);
+				if(z == 1)
+				{
+					z = 0;
+				}
+				else
+				{
+					z = 1;
+				}
+			}
 
-forever:    	jmp     forever
+			if (button_press)
+			{
+				button_press = FALSE;
+				//clearDisplay();
+				drawBlock(y,x,z);
+			}
+		}
+}
 ```
-This section of code contains the constants and the main section of the program.  message is the array holding the encrypted message.  key is the array holding the decryption key. The three .equ lines create constants so that magic numbers do not need to be used in the program.  The three first lines in the main loop set up storage of the hex equation and memory locations.  The main section of the code loads the message, key, key length, and memory starting point into registers for use by the program.
+This section of code contains the required functionality.  In the beginning of the code it sets up variables and pulls functions from external sources. After the first block is drawn to the screen, the code goes through an infinite while loop to see if buttons are pressed.  If any of the directional buttons are pressed, the nokia display will draw a new box in the direction chosen without erasing the previous box.  If the auxillary button is pressed, the drawBlock function will invert and draw a white box to the nokia display.  In this manner, the program creates an etch-a-sketch type game.
 
 ```
 ;-------------------------------------------------------------------------------
